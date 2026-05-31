@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Matrix Transformation Visualizer</title>
+<style>
+:root{
+  --ink:#101828; --muted:#667085; --blue:#2563eb; --red:#dc2626; --green:#059669;
+  --purple:#7c3aed; --card:#fff; --shadow:0 18px 45px rgba(16,24,40,.10);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background:radial-gradient(circle at top left,#dbeafe 0,transparent 34%),linear-gradient(135deg,#f8fafc,#fff 45%,#eef2ff);
+  color:var(--ink);
+}
+.app{max-width:1480px;margin:0 auto;padding:22px}
+header{
+  background:#020617;color:white;border-radius:30px;padding:26px 30px;margin-bottom:16px;box-shadow:var(--shadow);
+  overflow:hidden;position:relative;
+}
+header:after{content:"";position:absolute;right:-50px;top:-50px;width:240px;height:240px;border-radius:999px;background:rgba(37,99,235,.3);filter:blur(34px)}
+.pill{display:inline-flex;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:7px 12px;color:#bfdbfe;font-weight:950;font-size:13px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px}
+h1{margin:0;font-size:clamp(31px,4vw,54px);letter-spacing:-.04em;line-height:1;font-weight:950}
+header p{margin:12px 0 0;color:#cbd5e1;font-size:18px;line-height:1.45;max-width:980px}
+.top{display:grid;grid-template-columns:1.3fr .7fr;gap:14px;margin-bottom:14px}
+.card{background:rgba(255,255,255,.9);border:1px solid #dbeafe;border-radius:26px;box-shadow:var(--shadow);padding:18px;backdrop-filter:blur(10px)}
+.tag{font-size:13px;font-weight:950;color:var(--blue);letter-spacing:.12em;text-transform:uppercase;margin-bottom:12px}
+.buttons{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+button{
+  border:1px solid #dbeafe;background:white;border-radius:16px;padding:12px 10px;color:#1e293b;font-weight:950;
+  cursor:pointer;transition:.15s transform,.15s background,.15s box-shadow;
+}
+button:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(15,23,42,.08)}
+button.active{background:#020617;color:white;border-color:#020617}
+button:disabled{cursor:not-allowed;opacity:.55;transform:none!important;box-shadow:none!important}
+.readout h2{margin:0 0 8px;font-size:25px;letter-spacing:-.03em}
+.readout p{margin:0;color:var(--muted);line-height:1.45;font-size:16px}
+.main{display:grid;grid-template-columns:330px 1fr 330px;gap:14px}
+.matrix-wrap{display:flex;align-items:center;gap:14px;margin:10px 0 18px}
+.A{font-family:Georgia,serif;font-size:52px}
+.matrix{display:grid;grid-template-columns:repeat(2,58px);gap:10px;padding:20px 18px;position:relative;background:#fff;border-radius:12px;font-family:"Times New Roman",serif;font-size:35px;text-align:center}
+.matrix:before,.matrix:after{content:"";position:absolute;top:6px;bottom:6px;width:12px;border-top:4px solid var(--ink);border-bottom:4px solid var(--ink)}
+.matrix:before{left:-8px;border-left:4px solid var(--ink);border-radius:12px 0 0 12px}
+.matrix:after{right:-8px;border-right:4px solid var(--ink);border-radius:0 12px 12px 0}
+.formula-box{border:1px solid #dbeafe;border-radius:20px;background:white;padding:15px;margin-top:13px}
+.formula-box h3{margin:0 0 8px;font-size:18px}
+.formula{font-family:"Times New Roman",serif;font-size:25px;line-height:1.45}
+.big-note{margin-top:14px;border-radius:20px;background:#eff6ff;border:1px solid #bfdbfe;padding:15px;font-weight:850;color:#1e3a8a;line-height:1.45}
+.visual{padding:12px}
+.visual-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}
+.visual h2{margin:0;font-size:23px}
+.small{font-size:14px;padding:9px 12px;border-radius:14px}
+.svg-wrap{background:#f8fbff;border:1px solid #bfdbfe;border-radius:24px;overflow:hidden}
+svg{width:100%;height:auto;display:block}
+.slider-card{border:1px solid #dbeafe;background:white;border-radius:17px;padding:10px 12px;font-weight:900;margin-top:10px}
+.slider-card label{display:flex;justify-content:space-between;align-items:center;font-size:14px;margin-bottom:8px}
+input[type=range]{width:100%;accent-color:var(--blue)}
+input:disabled{cursor:not-allowed;opacity:.55}
+.object-buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.mini{border:1px solid #dbeafe;border-radius:22px;background:white;overflow:hidden;margin-bottom:12px}
+.mini-head{display:flex;justify-content:space-between;padding:11px 14px;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-weight:950}
+.caption{padding:10px 14px;color:#334155;font-weight:800;font-size:15px}
+.legend{display:flex;gap:9px;flex-wrap:wrap;margin-top:10px}
+.key{display:inline-flex;align-items:center;gap:7px;border:1px solid #dbeafe;background:white;border-radius:999px;padding:8px 11px;font-weight:850;font-size:14px}
+.dot{width:12px;height:12px;border-radius:999px;display:inline-block}
+.blue{background:var(--blue)} .red{background:var(--red)} .green{background:var(--green)} .purple{background:var(--purple)}
+.bottom{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+.step{border-left:6px solid var(--blue);padding:12px 16px;background:#f8fafc;border-radius:16px;margin-top:12px;line-height:1.45}
+details{border:1px solid #dbeafe;border-radius:18px;padding:14px 16px;background:white;margin-top:10px}
+summary{cursor:pointer;font-weight:950}
+.answer{margin-top:10px;color:#065f46;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:14px;padding:10px}
+.static-rotation-formula,.machine-explain,.reflection-only-display,.shear-k-panel,.under-visual-formula{
+  margin-top:12px;border-radius:20px;padding:14px;
+}
+.static-rotation-formula{border:1px solid #ddd6fe;background:linear-gradient(180deg,#ffffff,#f5f3ff)}
+.machine-explain{border:1px solid #bfdbfe;background:linear-gradient(180deg,#ffffff,#eff6ff)}
+.reflection-only-display{border:1px solid #bbf7d0;background:linear-gradient(180deg,#ffffff,#ecfdf5)}
+.shear-k-panel{border:1px solid #bfdbfe;background:linear-gradient(180deg,#ffffff,#eff6ff)}
+.under-visual-formula{border:1px solid #ddd6fe;background:linear-gradient(180deg,#ffffff,#f5f3ff)}
+.static-rotation-formula h3,.machine-explain h3,.reflection-only-display h3,.shear-k-panel h3,.under-visual-formula h3{margin:0 0 10px;font-size:17px}
+.static-latex,.live-latex,.math-line{
+  font-family:"Times New Roman", Cambria, Georgia, serif;font-size:23px;line-height:1.5;color:#0f172a
+}
+.static-matrix,.live-matrix,.machine-matrix,.shear-matrix-inline{
+  display:inline-grid;gap:2px 10px;border-left:3px solid #0f172a;border-right:3px solid #0f172a;padding:5px 10px;margin:0 5px;vertical-align:middle;text-align:center
+}
+.static-matrix{grid-template-columns:repeat(2,86px)}
+.live-matrix{grid-template-columns:repeat(2,92px)}
+.shear-matrix-inline{grid-template-columns:52px 52px}
+.machine-vector{
+  display:inline-grid;grid-template-columns:70px;border-left:3px solid #0f172a;border-right:3px solid #0f172a;padding:5px 10px;margin:0 5px;vertical-align:middle;text-align:center
+}
+.machine-matrix{grid-template-columns:155px 155px}
+.formula-hint,.shear-note-clean,.reflection-note,.custom-lock-note{
+  margin-top:10px;border-radius:14px;padding:9px 11px;font-size:14px;font-weight:850;line-height:1.35
+}
+.formula-hint{background:white;border:1px solid #ddd6fe;color:#334155}
+.shear-note-clean{background:#f8fafc;border:1px solid #dbeafe;color:#334155}
+.reflection-note{background:white;border:1px solid #bbf7d0;color:#064e3b}
+.custom-lock-note{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412}
+.reflection-rule,.shear-one-line{
+  margin-top:10px;border-radius:14px;background:white;padding:10px 12px;font-family:"Times New Roman", Cambria, Georgia, serif;font-size:23px;font-weight:800;line-height:1.45;overflow-x:auto;white-space:nowrap
+}
+.reflection-rule{border:1px solid #bbf7d0;color:#064e3b}
+.shear-one-line{border:1px solid #bfdbfe;color:#1e3a8a}
+.custom-mode-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+.custom-mode-tabs button.active{background:#020617;color:white;border-color:#020617}
+.direction-buttons,.reflection-buttons,.shear-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.direction-buttons button.active{background:#2563eb;color:white;border-color:#2563eb}
+.reflection-buttons button.active{background:#059669;color:white;border-color:#059669}
+.shear-buttons button.active{background:#2563eb;color:white;border-color:#2563eb}
+.theta-display-row{display:flex;justify-content:space-between;align-items:center;gap:10px;border-radius:16px;background:white;border:1px solid #ddd6fe;padding:10px 12px;font-weight:950}
+.theta-value{font-family:"Times New Roman", Cambria, Georgia, serif;font-size:30px;color:#1e3a8a}
+.mode-hidden,.bottom-mode-hidden{display:none!important}
+
+.shear-reference-panel{
+  margin-top:12px;
+  border:1px solid #dbeafe;
+  background:white;
+  border-radius:20px;
+  padding:14px;
+}
+.shear-reference-panel h3{
+  margin:0 0 10px;
+  font-size:18px;
+  color:#0f172a;
+  letter-spacing:-.02em;
+}
+.shear-ref-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:14px;
+  margin-top:8px;
+}
+.shear-ref-table th{
+  text-align:left;
+  color:#0f172a;
+  border-bottom:1px solid #cbd5e1;
+  padding:8px;
+  font-weight:950;
+}
+.shear-ref-table td{
+  border-bottom:1px solid #e2e8f0;
+  padding:8px;
+  vertical-align:middle;
+}
+.shear-ref-table tr.active-row{
+  background:#eff6ff;
+}
+.mini-matrix{
+  display:inline-grid;
+  grid-template-columns:30px 30px;
+  gap:1px 8px;
+  border-left:2px solid #0f172a;
+  border-right:2px solid #0f172a;
+  padding:4px 7px;
+  font-family:"Times New Roman", Cambria, Georgia, serif;
+  font-size:18px;
+  text-align:center;
+}
+
+
+.after-scaling-panel{
+  margin-top:12px;
+  border:1px solid #dbeafe;
+  background:white;
+  border-radius:20px;
+  padding:14px;
+}
+.after-scaling-panel h3{
+  margin:0 0 10px;
+  font-size:18px;
+  color:#0f172a;
+  letter-spacing:-.02em;
+}
+.scaling-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:13px;
+  margin-top:8px;
+}
+.scaling-table th{
+  text-align:left;
+  color:#0f172a;
+  border-bottom:1px solid #cbd5e1;
+  padding:7px;
+  font-weight:950;
+}
+.scaling-table td{
+  border-bottom:1px solid #e2e8f0;
+  padding:7px;
+  vertical-align:middle;
+}
+.scaling-table tr.active-row{
+  background:#eff6ff;
+}
+.scaling-mini-matrix{
+  display:inline-grid;
+  grid-template-columns:28px 28px;
+  gap:1px 7px;
+  border-left:2px solid #0f172a;
+  border-right:2px solid #0f172a;
+  padding:4px 7px;
+  font-family:"Times New Roman", Cambria, Georgia, serif;
+  font-size:17px;
+  text-align:center;
+}
+.custom-scale-builder{
+  margin-top:12px;
+  border:1px solid #dbeafe;
+  background:linear-gradient(180deg,#ffffff,#eff6ff);
+  border-radius:20px;
+  padding:14px;
+}
+.scale-buttons{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+  margin-top:10px;
+}
+.scale-buttons button{
+  border-radius:14px;
+  padding:10px;
+}
+.scale-buttons button.active{
+  background:#2563eb;
+  color:white;
+  border-color:#2563eb;
+}
+
+
+.scale-six-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-top:12px;
+}
+.scale-six-card{
+  border:1px solid #dbeafe;
+  background:white;
+  border-radius:18px;
+  padding:12px;
+}
+.scale-six-card.active-scale-card{
+  background:#eff6ff;
+  border-color:#93c5fd;
+}
+.scale-six-title{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  font-weight:950;
+  color:#0f172a;
+  margin-bottom:8px;
+}
+.scale-six-formula{
+  border-radius:14px;
+  background:white;
+  border:1px solid #bfdbfe;
+  padding:9px 11px;
+  color:#1e3a8a;
+  font-family:"Times New Roman", Cambria, Georgia, serif;
+  font-size:20px;
+  font-weight:800;
+  line-height:1.35;
+  overflow-x:auto;
+  white-space:nowrap;
+  margin-bottom:10px;
+}
+@media(max-width:900px){
+  .scale-six-grid{grid-template-columns:1fr;}
+}
+
+@media(max-width:1200px){.top,.main,.bottom{grid-template-columns:1fr}.buttons{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="pill">2D matrix transformation simulator</div>
+  <h1>Choose an Object and Watch the Transformation</h1>
+  <p>Use this for rotations, reflections, shearing, and custom matrices. Pick an object: arrow, L-shape, house, stickman, square, or triangle.</p>
+</header>
+
+<div class="top">
+  <section class="card">
+    <div class="tag">Choose a transformation</div>
+    <div class="buttons" id="presetButtons"></div>
+  </section>
+  <section class="card readout">
+    <h2 id="title"></h2>
+    <p id="meaning"></p>
+
+    <div class="static-rotation-formula" id="rotationTopCard">
+      <h3>Rotation formula only</h3>
+      <div class="static-latex">
+        R<sub>θ</sub> =
+        <span class="static-matrix">
+          <span>cos θ</span><span>−sin θ</span>
+          <span>sin θ</span><span>cos θ</span>
+        </span>
+      </div>
+      <div class="static-latex">θ &gt; 0 ⇒ counterclockwise</div>
+      <div class="static-latex">θ &lt; 0 ⇒ clockwise</div>
+      <div class="static-latex" style="margin-top:8px;">
+        R<sub>−θ</sub> =
+        <span class="static-matrix">
+          <span>cos θ</span><span>sin θ</span>
+          <span>−sin θ</span><span>cos θ</span>
+        </span>
+      </div>
+      <div class="formula-hint">Use this only for rotations. Reflections and shearing use coordinate rules.</div>
+    </div>
+
+    <div class="machine-explain" id="machineTopCard">
+      <h3>Matrix machine idea</h3>
+      <div class="static-latex">
+        <span class="machine-vector">
+          <span>new x</span>
+          <span>new y</span>
+        </span>
+        =
+        <span class="machine-matrix">
+          <span>old x affects new x</span>
+          <span>old y affects new x</span>
+          <span>old x affects new y</span>
+          <span>old y affects new y</span>
+        </span>
+      </div>
+      <div class="reflection-rule">new x = ax + by</div>
+      <div class="reflection-rule">new y = cx + dy</div>
+    </div>
+  </section>
+</div>
+
+<div class="main">
+  <section class="card">
+    <div class="tag">Matrix</div>
+    <div class="matrix-wrap">
+      <div class="A">A =</div>
+      <div class="matrix" id="matrixDisplay"></div>
+    </div>
+    <div class="formula-box">
+      <h3>Rule for any vector</h3>
+      <div class="formula" id="rule"></div>
+    </div>
+    <div class="formula-box">
+      <h3>Choose object</h3>
+      <div class="object-buttons" id="objectButtons"></div>
+    </div>
+    <div class="formula-box">
+      <h3>Custom matrix sliders</h3>
+      <div class="slider-card"><label>a <span id="aVal"></span></label><input id="aSlider" type="range" min="-2" max="2" step="0.5"></div>
+      <div class="slider-card"><label>b <span id="bVal"></span></label><input id="bSlider" type="range" min="-2" max="2" step="0.5"></div>
+      <div class="slider-card"><label>c <span id="cVal"></span></label><input id="cSlider" type="range" min="-2" max="2" step="0.5"></div>
+      <div class="slider-card"><label>d <span id="dVal"></span></label><input id="dSlider" type="range" min="-2" max="2" step="0.5"></div>
+    </div>
+    <div class="big-note" id="tip"></div>
+    <div class="legend">
+      <span class="key"><span class="dot blue"></span>original</span>
+      <span class="key"><span class="dot red"></span>final</span>
+      <span class="key"><span class="dot green"></span>moving</span>
+      <span class="key"><span class="dot purple"></span>angle lines</span>
+    </div>
+  </section>
+
+  <section class="card visual">
+    <div class="visual-head">
+      <h2>Main visual</h2>
+      <button class="small" id="playBtn">Play motion</button>
+    </div>
+    <div class="svg-wrap">
+      <svg id="mainSvg" viewBox="0 0 780 570"></svg>
+    </div>
+    <div class="slider-card">
+      <label>Starting arrow/object angle <span id="thetaVal"></span></label>
+      <input id="thetaSlider" type="range" min="0" max="345" step="15" value="30">
+    </div>
+    <div class="slider-card">
+      <label>Object size <span id="sizeVal"></span></label>
+      <input id="sizeSlider" type="range" min="0.75" max="2" step="0.25" value="1.25">
+    </div>
+
+    <div class="shear-reference-panel bottom-mode-hidden" id="shearKPanel">
+      <h3 id="shearKTitle">Shearing reference</h3>
+      <div class="slider-card">
+        <label>shear value k <span id="shearKVal">1</span></label>
+        <input id="shearKSlider" type="range" min="-2" max="2" step="0.25" value="1">
+      </div>
+      <table class="shear-ref-table">
+        <thead>
+          <tr><th>Matrix</th><th>Formula</th><th>Effect</th></tr>
+        </thead>
+        <tbody id="shearReferenceBody"></tbody>
+      </table>
+      <div class="shear-note-clean" id="shearEffectLine">
+        Shearing uses off-diagonal entries. The slider changes k and updates the visual.
+      </div>
+    </div>
+
+    <div class="reflection-only-display bottom-mode-hidden" id="reflectionOnlyPanel">
+      <h3>Reflection rules only</h3>
+      <div class="reflection-rule" id="activeReflectionRule">(x,y) → (x,−y)</div>
+      <div class="static-latex" style="margin-top:10px;">
+        <span class="machine-vector">
+          <span>new x</span>
+          <span>new y</span>
+        </span>
+        =
+        <span class="machine-matrix">
+          <span id="effectA">old x affects new x</span>
+          <span id="effectB">old y affects new x</span>
+          <span id="effectC">old x affects new y</span>
+          <span id="effectD">old y affects new y</span>
+        </span>
+      </div>
+      <div class="reflection-note" id="activeReflectionExplanation">Use the selected reflection rule.</div>
+    </div>
+
+    <div class="under-visual-formula" id="customPanel">
+      <div class="custom-mode-tabs">
+        <button id="customModeRotationBtn" class="active" type="button">Custom rotation</button>
+        <button id="customModeReflectionBtn" type="button">Custom reflection</button>
+        <button id="customModeShearBtn" type="button">Custom shearing</button>
+        <button id="customModeScaleBtn" type="button">Custom scaling</button>
+      </div>
+
+      <div id="rotationBuilderInner">
+        <h3>Live rotation formula</h3>
+        <div class="theta-display-row">
+          <span>θ value</span>
+          <span class="theta-value" id="liveThetaValue">0°</span>
+        </div>
+        <div class="slider-card">
+          <label>θ slider <span id="liveThetaSliderVal">0°</span></label>
+          <input id="liveThetaSlider" type="range" min="0" max="360" step="1" value="0">
+        </div>
+        <div class="direction-buttons">
+          <button id="liveCCWBtn" class="active" type="button">CCW</button>
+          <button id="liveCWBtn" type="button">CW</button>
+        </div>
+        <div class="live-latex">
+          R<sub id="thetaSubscript">θ</sub> =
+          <span class="live-matrix" id="liveRotationMatrix">
+            <span>cos(0°)</span><span>−sin(0°)</span>
+            <span>sin(0°)</span><span>cos(0°)</span>
+          </span>
+        </div>
+        <div class="live-latex" id="liveCoordinateRule">
+          (x,y) → (x cos(0°) − y sin(0°), x sin(0°) + y cos(0°))
+        </div>
+        <div class="custom-lock-note" id="customLockNote">Locked: click Custom to use the custom builders.</div>
+      </div>
+
+      <div id="reflectionBuilderInner" class="mode-hidden">
+        <h3>Custom reflection builder</h3>
+        <div class="formula-hint">Reflection does not use cos θ / sin θ. Pick a mirror line.</div>
+        <div class="reflection-buttons">
+          <button id="reflectXBtn" type="button">Reflect x-axis</button>
+          <button id="reflectYBtn" type="button">Reflect y-axis</button>
+          <button id="reflectYeqXBtn" type="button">Reflect y = x</button>
+          <button id="reflectYeqNegXBtn" type="button">Reflect y = −x</button>
+        </div>
+        <div class="reflection-rule" id="reflectionRuleText">(x,y) → (x,−y)</div>
+      </div>
+
+      <div id="shearBuilderInner" class="mode-hidden">
+        <h3>Custom shearing builder</h3>
+        <div class="shear-note-clean">Shearing uses off-diagonal entries. Pick horizontal or vertical shearing, then adjust k.</div>
+        <div class="shear-buttons">
+          <button id="shearHorizontalBtn" class="active" type="button">Horizontal shearing</button>
+          <button id="shearVerticalBtn" type="button">Vertical shearing</button>
+        </div>
+        <div class="slider-card">
+          <label>custom shear value k <span id="customShearKVal">1</span></label>
+          <input id="customShearKSlider" type="range" min="-2" max="2" step="0.25" value="1">
+        </div>
+        <div class="shear-note-clean" id="customShearEffectLine">The k-slider updates the selected shearing matrix and the visual.</div>
+      </div>
+
+      <div id="scaleBuilderInner" class="custom-scale-builder mode-hidden">
+        <h3>Custom scaling builder</h3>
+        <div class="shear-note-clean">
+          Move any one of the 6 sliders below. The visual, matrix, and highlighted row in the scaling table update to match that slider.
+        </div>
+
+        <div class="scale-six-grid">
+          <div class="scale-six-card" id="horizontalStretchCard">
+            <div class="scale-six-title"><span>Horizontal stretch</span><span id="horizontalStretchKVal">1.5</span></div>
+            <input id="horizontalStretchSlider" type="range" min="1.25" max="3" step="0.25" value="1.5">
+          </div>
+
+          <div class="scale-six-card" id="horizontalCompressCard">
+            <div class="scale-six-title"><span>Horizontal compress</span><span id="horizontalCompressKVal">0.75</span></div>
+            <input id="horizontalCompressSlider" type="range" min="0.25" max="0.75" step="0.25" value="0.75">
+          </div>
+
+          <div class="scale-six-card" id="verticalStretchCard">
+            <div class="scale-six-title"><span>Vertical stretch</span><span id="verticalStretchKVal">1.5</span></div>
+            <input id="verticalStretchSlider" type="range" min="1.25" max="3" step="0.25" value="1.5">
+          </div>
+
+          <div class="scale-six-card" id="verticalCompressCard">
+            <div class="scale-six-title"><span>Vertical compress</span><span id="verticalCompressKVal">0.75</span></div>
+            <input id="verticalCompressSlider" type="range" min="0.25" max="0.75" step="0.25" value="0.75">
+          </div>
+
+          <div class="scale-six-card" id="uniformStretchCard">
+            <div class="scale-six-title"><span>Uniform stretch</span><span id="uniformStretchKVal">1.5</span></div>
+            <input id="uniformStretchSlider" type="range" min="1.25" max="3" step="0.25" value="1.5">
+          </div>
+
+          <div class="scale-six-card" id="uniformCompressCard">
+            <div class="scale-six-title"><span>Uniform compress</span><span id="uniformCompressKVal">0.75</span></div>
+            <input id="uniformCompressSlider" type="range" min="0.25" max="0.75" step="0.25" value="0.75">
+          </div>
+        </div>
+
+        <div class="shear-note-clean" id="customScaleEffectLine">
+          Move one slider. The visual and the scaling table under the After diagram update to that scaling case.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 style="margin-top:0">Before and after</h2>
+    <div class="mini">
+      <div class="mini-head"><span>Before</span><span>x</span></div>
+      <svg id="beforeSvg" viewBox="0 0 360 240"></svg>
+      <div class="caption">Original object before multiplying by A.</div>
+    </div>
+    <div class="mini">
+      <div class="mini-head"><span>After</span><span>Ax</span></div>
+      <svg id="afterSvg" viewBox="0 0 360 240"></svg>
+      <div class="caption">Same object after the transformation.</div>
+    </div>
+
+    <div class="after-scaling-panel bottom-mode-hidden" id="afterScalingPanel">
+      <h3>Diagonal Entries — Scaling reference</h3>
+      <div class="slider-card">
+        <label>scaling value k <span id="scaleKVal">1.5</span></label>
+        <input id="scaleKSlider" type="range" min="0.25" max="3" step="0.25" value="1.5">
+      </div>
+      <table class="scaling-table">
+        <thead>
+          <tr><th>Matrix</th><th>Condition</th><th>Effect</th></tr>
+        </thead>
+        <tbody id="afterScalingTableBody"></tbody>
+      </table>
+      <div class="shear-note-clean" id="scalingReferenceNote">
+        Scaling uses diagonal entries. Shearing uses off-diagonal entries.
+      </div>
+    </div>
+
+  </section>
+</div>
+
+<div class="bottom">
+  <section class="card">
+    <h2 style="margin-top:0">Why different objects help</h2>
+    <div class="step">
+      <b>Arrow:</b> best for seeing where one vector goes.<br>
+      <b>L-shape / house:</b> best for seeing rotations and reflections.<br>
+      <b>Square:</b> best for determinant and area change.<br>
+      <b>Stickman:</b> best for seeing flips, stretching, and shearing.
+    </div>
+  </section>
+  <section class="card">
+    <h2 style="margin-top:0">Memory</h2>
+    <details open>
+      <summary>Common transformations</summary>
+      <div class="answer">
+        90° CCW: (x,y) → (−y,x)<br>
+        180°: (x,y) → (−x,−y)<br>
+        270° CCW: (x,y) → (y,−x)<br><br>
+        x-axis reflection: (x,y) → (x,−y)<br>
+        y-axis reflection: (x,y) → (−x,y)<br><br>
+        Horizontal shearing: (x,y) → (x + ky, y)<br>
+        Vertical shearing: (x,y) → (x, kx + y)
+      </div>
+    </details>
+  </section>
+</div>
+</div>
+
+<script>
+const presets=[
+  {id:"rot90",label:"Rotate 90° CCW",A:[[0,-1],[1,0]],name:"Rotate 90° counterclockwise",meaning:"One quarter-turn left: (x,y) → (−y,x).",motion:"The object rotates 90° counterclockwise."},
+  {id:"rot180",label:"Rotate 180°",A:[[-1,0],[0,-1]],name:"Rotate 180°",meaning:"Points exactly opposite: (x,y) → (−x,−y).",motion:"The object rotates halfway around the origin."},
+  {id:"rot270",label:"Rotate 270° CCW",A:[[0,1],[-1,0]],name:"Rotate 270° counterclockwise",meaning:"Same as 90° clockwise: (x,y) → (y,−x).",motion:"The object makes three quarter-turns counterclockwise."},
+  {id:"refx",label:"Reflect x-axis",A:[[1,0],[0,-1]],name:"Reflect across x-axis",meaning:"Reflection rule: (x,y) → (x,−y).",motion:"The object flips across the horizontal axis."},
+  {id:"refy",label:"Reflect y-axis",A:[[-1,0],[0,1]],name:"Reflect across y-axis",meaning:"Reflection rule: (x,y) → (−x,y).",motion:"The object flips across the vertical axis."},
+  {id:"refyx",label:"Reflect y = x",A:[[0,1],[1,0]],name:"Reflect across y = x",meaning:"Reflection rule: (x,y) → (y,x).",motion:"The object mirrors across the diagonal y = x."},
+  {id:"refnegx",label:"Reflect y = −x",A:[[0,-1],[-1,0]],name:"Reflect across y = −x",meaning:"Reflection rule: (x,y) → (−y,−x).",motion:"The object mirrors across y = −x."},
+  {id:"rot60",label:"Rotate 60° CCW",A:[[.5,-Math.sqrt(3)/2],[Math.sqrt(3)/2,.5]],name:"Rotate 60° counterclockwise",meaning:"The object turns 60° left using cos60° and sin60°.",motion:"The object rotates 60° counterclockwise."},
+  {id:"shearh",label:"Horizontal shearing",A:[[1,1],[0,1]],name:"Horizontal shearing",meaning:"Shearing rule: (x,y) → (x + ky, y).",motion:"Horizontal shearing slides in the x₁ direction."},
+  {id:"shearv",label:"Vertical shearing",A:[[1,0],[1,1]],name:"Vertical shearing",meaning:"Shearing rule: (x,y) → (x, kx + y).",motion:"Vertical shearing slides in the x₂ direction."},
+  {id:"custom",label:"Custom",A:[[1,0],[0,1]],name:"Custom matrix",meaning:"Use the custom builders or a,b,c,d sliders.",motion:"The object is transformed by your custom matrix."}
+];
+
+const objects=[
+  {id:"arrow",label:"Arrow"},
+  {id:"lshape",label:"L-shape"},
+  {id:"house",label:"House"},
+  {id:"stickman",label:"Stickman"},
+  {id:"square",label:"Square"},
+  {id:"triangle",label:"Triangle"}
+];
+
+let current=presets[1];
+let customBuilderMode="rotation";
+let reflectionChoice="x";
+let customShearMode="horizontal";
+let shearK=1;
+let scaleK=1.5;
+let customScaleMode="horizontalStretch";
+let horizontalStretchK=1.5;
+let horizontalCompressK=0.75;
+let verticalStretchK=1.5;
+let verticalCompressK=0.75;
+let uniformStretchK=1.5;
+let uniformCompressK=0.75;
+let objectType="lshape";
+let theta=30*Math.PI/180;
+let size=1.25;
+let t=1;
+let animating=false;
+
+const W=780,H=570,S=58;
+
+const fmt=v=>{
+  if(Math.abs(v)<1e-9)return"0";
+  if(Math.abs(v-1)<1e-9)return"1";
+  if(Math.abs(v+1)<1e-9)return"−1";
+  if(Math.abs(v-.5)<.001)return"1/2";
+  if(Math.abs(v+.5)<.001)return"−1/2";
+  if(Math.abs(v-Math.sqrt(3)/2)<.001)return"√3/2";
+  if(Math.abs(v+Math.sqrt(3)/2)<.001)return"−√3/2";
+  return Number(v.toFixed(2)).toString();
+};
+
+const mul=(A,p)=>[A[0][0]*p[0]+A[0][1]*p[1],A[1][0]*p[0]+A[1][1]*p[1]];
+const lerp=(p,q,t)=>[p[0]+(q[0]-p[0])*t,p[1]+(q[1]-p[1])*t];
+const toSvg=(x,y,w=W,h=H,s=S)=>[w/2+x*s,h/2-y*s];
+
+function rotPoint(p){
+  const x=p[0]*size,y=p[1]*size;
+  return [x*Math.cos(theta)-y*Math.sin(theta),x*Math.sin(theta)+y*Math.cos(theta)];
+}
+function transformPoint(A,p){return mul(A,rotPoint(p));}
+function movingPoint(A,p){return lerp(rotPoint(p), transformPoint(A,p), t);}
+
+function grid(w,h,s){
+  let out="";
+  for(let x=-6;x<=6;x++){let [sx]=toSvg(x,0,w,h,s);out+=`<line x1="${sx}" y1="0" x2="${sx}" y2="${h}" stroke="#dbeafe"/>`;}
+  for(let y=-4;y<=4;y++){let [,sy]=toSvg(0,y,w,h,s);out+=`<line x1="0" y1="${sy}" x2="${w}" y2="${sy}" stroke="#dbeafe"/>`;}
+  out+=`<line x1="0" y1="${h/2}" x2="${w}" y2="${h/2}" stroke="#1e293b" stroke-width="2"/>`;
+  out+=`<line x1="${w/2}" y1="0" x2="${w/2}" y2="${h}" stroke="#1e293b" stroke-width="2"/>`;
+  out+=`<circle cx="${w/2}" cy="${h/2}" r="${s*2.5}" fill="none" stroke="#93c5fd" stroke-width="3" stroke-dasharray="8 8"/>`;
+  out+=`<text x="${w-32}" y="${h/2-8}" fill="#0f172a" font-size="18" font-weight="900">x</text>`;
+  out+=`<text x="${w/2+9}" y="24" fill="#0f172a" font-size="18" font-weight="900">y</text>`;
+  return out;
+}
+function makeLine(p,q,color,w,h,s,dash=""){
+  const [x1,y1]=toSvg(p[0],p[1],w,h,s),[x2,y2]=toSvg(q[0],q[1],w,h,s);
+  return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="2" stroke-dasharray="${dash}" opacity=".65"/>`;
+}
+function specialLines(w,h,s){
+  return makeLine([-4,-4],[4,4],"#64748b",w,h,s,"8 8") + makeLine([-4,4],[4,-4],"#7c3aed",w,h,s,"8 8");
+}
+function drawPolyline(points,A,w,h,s,color,width=5,fill="none",moving=false){
+  const pts=points.map(p=>moving?movingPoint(A,p):transformPoint(A,p)).map(p=>toSvg(p[0],p[1],w,h,s).join(",")).join(" ");
+  return `<polyline points="${pts}" fill="${fill}" stroke="${color}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round"/>`;
+}
+function drawPolygon(points,A,w,h,s,color,fill,moving=false){
+  const pts=points.map(p=>moving?movingPoint(A,p):transformPoint(A,p)).map(p=>toSvg(p[0],p[1],w,h,s).join(",")).join(" ");
+  return `<polygon points="${pts}" fill="${fill}" stroke="${color}" stroke-width="5" stroke-linejoin="round"/>`;
+}
+function drawArrow(A,w,h,s,color,label,moving=false,opacity=1){
+  const p=moving?movingPoint(A,[2,0]):transformPoint(A,[2,0]);
+  const [x1,y1]=toSvg(0,0,w,h,s),[x2,y2]=toSvg(p[0],p[1],w,h,s);
+  const ang=Math.atan2(y2-y1,x2-x1), ah=16;
+  const a=[x2-ah*Math.cos(ang-Math.PI/6),y2-ah*Math.sin(ang-Math.PI/6)];
+  const b=[x2-ah*Math.cos(ang+Math.PI/6),y2-ah*Math.sin(ang+Math.PI/6)];
+  return `<g opacity="${opacity}"><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="7" stroke-linecap="round"/><polygon points="${x2},${y2} ${a[0]},${a[1]} ${b[0]},${b[1]}" fill="${color}"/><text x="${x2+10}" y="${y2-12}" fill="#0f172a" font-size="19" font-weight="950">${label}</text></g>`;
+}
+function drawStickman(A,w,h,s,color,moving=false,opacity=1){
+  const segs=[[[0,1.2],[0,.2]],[[0,.8],[-.45,.45]],[[0,.8],[.45,.45]],[[0,.2],[-.35,-.55]],[[0,.2],[.35,-.55]]];
+  let out=`<g opacity="${opacity}">`;
+  const head=moving?movingPoint(A,[0,1.55]):transformPoint(A,[0,1.55]);
+  const [hx,hy]=toSvg(head[0],head[1],w,h,s);
+  out+=`<circle cx="${hx}" cy="${hy}" r="13" fill="none" stroke="${color}" stroke-width="5"/>`;
+  for(const seg of segs){
+    const p=moving?movingPoint(A,seg[0]):transformPoint(A,seg[0]), q=moving?movingPoint(A,seg[1]):transformPoint(A,seg[1]);
+    const [x1,y1]=toSvg(p[0],p[1],w,h,s),[x2,y2]=toSvg(q[0],q[1],w,h,s);
+    out+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="6" stroke-linecap="round"/>`;
+  }
+  return out+"</g>";
+}
+function drawObject(A,w,h,s,color,label,moving=false,opacity=1){
+  if(objectType==="arrow") return drawArrow(A,w,h,s,color,label,moving,opacity);
+  if(objectType==="lshape") return `<g opacity="${opacity}">`+drawPolygon([[0,0],[1,0],[1,.25],[.25,.25],[.25,1],[0,1]],A,w,h,s,color,color+"33",moving)+`</g>`;
+  if(objectType==="house") return `<g opacity="${opacity}">`+drawPolygon([[-.8,-.6],[.8,-.6],[.8,.45],[0,1.15],[-.8,.45]],A,w,h,s,color,color+"33",moving)+drawPolyline([[-.35,-.6],[-.35,.05],[.1,.05],[.1,-.6]],A,w,h,s,color,4,"none",moving)+`</g>`;
+  if(objectType==="stickman") return drawStickman(A,w,h,s,color,moving,opacity);
+  if(objectType==="square") return `<g opacity="${opacity}">`+drawPolygon([[0,0],[1,0],[1,1],[0,1]],A,w,h,s,color,color+"33",moving)+`</g>`;
+  return `<g opacity="${opacity}">`+drawPolygon([[0,0],[1.2,.15],[.35,1.1]],A,w,h,s,color,color+"33",moving)+`</g>`;
+}
+function drawScene(svgId,w,h,s){
+  let out=grid(w,h,s)+specialLines(w,h,s);
+  out+=drawObject([[1,0],[0,1]],w,h,s,"#2563eb","x",false,.25);
+  out+=drawObject(current.A,w,h,s,"#dc2626","Ax",false,.25);
+  out+=drawObject(current.A,w,h,s,"#059669",t<1?"moving":"Ax",true,1);
+  document.getElementById(svgId).innerHTML=out;
+}
+function drawStatic(svgId,A,color,label){
+  const w=360,h=240,s=42;
+  let out=grid(w,h,s)+specialLines(w,h,s);
+  const oldT=t; t=1;
+  out+=drawObject(A,w,h,s,color,label,false,1);
+  t=oldT;
+  document.getElementById(svgId).innerHTML=out;
+}
+
+function isReflectionPreset(){return ["refx","refy","refyx","refnegx"].includes(current.id);}
+function isReflectionView(){return isReflectionPreset() || (current.id==="custom" && customBuilderMode==="reflection");}
+function isShearPreset(){return current.id==="shearh" || current.id==="shearv";}
+function isShearView(){return isShearPreset() || (current.id==="custom" && customBuilderMode==="shear");}
+
+function shearModeFromCurrent(){
+  if(current.id==="shearv") return "vertical";
+  if(current.id==="shearh") return "horizontal";
+  if(current.id==="custom") return customShearMode;
+  return "horizontal";
+}
+function shearMatrix(mode,k){return mode==="vertical" ? [[1,0],[k,1]] : [[1,k],[0,1]];}
+function applyShear(){
+  const mode=shearModeFromCurrent();
+  current={
+    ...current,
+    A:shearMatrix(mode,shearK),
+    name:current.id==="custom" ? (mode==="vertical"?"Custom vertical shearing":"Custom horizontal shearing") : (mode==="vertical"?"Vertical shearing":"Horizontal shearing"),
+    meaning:mode==="vertical" ? `Shearing rule: (x,y) → (x, kx + y), with k = ${fmt(shearK)}.` : `Shearing rule: (x,y) → (x + ky, y), with k = ${fmt(shearK)}.`,
+    motion:mode==="vertical" ? "Vertical shearing slides in the x₂ direction." : "Horizontal shearing slides in the x₁ direction."
+  };
+}
+function updateShearPanels(){
+  const show=isShearView();
+  document.getElementById("shearKPanel").classList.toggle("bottom-mode-hidden",!show);
+  if(!show) return;
+
+  const mode=shearModeFromCurrent();
+  const k=fmt(shearK);
+  const title=mode==="vertical" ? "Vertical shearing" : "Horizontal shearing";
+  const horizontalRow = `
+    <tr class="${mode==="horizontal" ? "active-row" : ""}">
+      <td><span class="mini-matrix"><span>1</span><span>${k}</span><span>0</span><span>1</span></span></td>
+      <td>(x,y) → (x + (${k})y, y)</td>
+      <td><b>Horizontal shearing</b> — slides in the x₁ direction</td>
+    </tr>`;
+  const verticalRow = `
+    <tr class="${mode==="vertical" ? "active-row" : ""}">
+      <td><span class="mini-matrix"><span>1</span><span>0</span><span>${k}</span><span>1</span></span></td>
+      <td>(x,y) → (x, (${k})x + y)</td>
+      <td><b>Vertical shearing</b> — slides in the x₂ direction</td>
+    </tr>`;
+
+  // For the main horizontal/vertical shearing tabs, show only the corresponding row.
+  // For Custom → Custom shearing, show both rows and highlight the selected one.
+  const rows = current.id==="custom" ? horizontalRow + verticalRow : (mode==="vertical" ? verticalRow : horizontalRow);
+
+  document.getElementById("shearKTitle").textContent=title;
+  document.getElementById("shearKVal").textContent=k;
+  document.getElementById("shearKSlider").value=shearK;
+  document.getElementById("shearReferenceBody").innerHTML=rows;
+  document.getElementById("shearEffectLine").textContent =
+    mode==="vertical"
+      ? "Vertical shearing: k is in the bottom-left entry, so x affects the new y-value."
+      : "Horizontal shearing: k is in the top-right entry, so y affects the new x-value.";
+
+  const cks=document.getElementById("customShearKSlider");
+  if(cks) cks.value=shearK;
+  const ckv=document.getElementById("customShearKVal");
+  if(ckv) ckv.textContent=k;
+  const ce=document.getElementById("customShearEffectLine");
+  if(ce) ce.textContent = mode==="vertical"
+    ? "Vertical shearing selected: A = [[1, 0], [k, 1]]."
+    : "Horizontal shearing selected: A = [[1, k], [0, 1]].";
+
+  document.getElementById("shearHorizontalBtn").classList.toggle("active",mode==="horizontal");
+  document.getElementById("shearVerticalBtn").classList.toggle("active",mode==="vertical");
+}
+
+function reflectionData(){
+  if(current.id==="refx" || reflectionChoice==="x") return {rule:"(x,y) → (x,−y)", note:"Reflect x-axis: x stays the same, y changes sign.", e:["old x stays in new x","old y does not affect new x","old x does not affect new y","old y flips in new y"]};
+  if(current.id==="refy" || reflectionChoice==="y") return {rule:"(x,y) → (−x,y)", note:"Reflect y-axis: x changes sign, y stays the same.", e:["old x flips in new x","old y does not affect new x","old x does not affect new y","old y stays in new y"]};
+  if(current.id==="refyx" || reflectionChoice==="yx") return {rule:"(x,y) → (y,x)", note:"Reflect y = x: coordinates swap.", e:["old x does not affect new x","old y becomes new x","old x becomes new y","old y does not affect new y"]};
+  return {rule:"(x,y) → (−y,−x)", note:"Reflect y = −x: coordinates swap and both signs change.", e:["old x does not affect new x","old y becomes negative new x","old x becomes negative new y","old y does not affect new y"]};
+}
+function updateReflectionPanel(){
+  const show=isReflectionView();
+  document.getElementById("reflectionOnlyPanel").classList.toggle("bottom-mode-hidden",!show);
+  if(!show) return;
+  const d=reflectionData();
+  document.getElementById("activeReflectionRule").textContent=d.rule;
+  document.getElementById("activeReflectionExplanation").textContent=d.note;
+  ["effectA","effectB","effectC","effectD"].forEach((id,i)=>document.getElementById(id).textContent=d.e[i]);
+}
+
+function setRotationFromLiveTheta(){
+  const signed=liveDirection==="cw" ? -liveTheta : liveTheta;
+  const rad=signed*Math.PI/180;
+  const cos=Math.cos(rad), sin=Math.sin(rad);
+  current={...current,id:"custom",name:`Custom ${liveDirection.toUpperCase()} rotation`,meaning:`Using the rotation formula with θ = ${liveTheta}° ${liveDirection.toUpperCase()}.`,motion:`The object rotates ${liveTheta}° ${liveDirection==="cw"?"clockwise":"counterclockwise"}.`,A:[[cos,-sin],[sin,cos]]};
+  t=1; render();
+}
+function rotationAngleFromMatrix(A){
+  const a=A[0][0], b=A[0][1], c=A[1][0], d=A[1][1];
+  const col1=Math.hypot(a,c), col2=Math.hypot(b,d), dot=a*b+c*d, det=a*d-b*c;
+  const ok=Math.abs(col1-1)<0.08 && Math.abs(col2-1)<0.08 && Math.abs(dot)<0.08 && det>0.92 && det<1.08;
+  let ccw=Math.atan2(c,a)*180/Math.PI; ccw=((ccw%360)+360)%360;
+  return {ok,ccw};
+}
+function syncLiveThetaFromMatrix(){
+  const info=rotationAngleFromMatrix(current.A);
+  if(!info.ok)return;
+  const ccw=Math.round(info.ccw);
+  if(ccw===0){liveTheta=0;liveDirection="ccw";}
+  else if(ccw<=180){liveTheta=ccw;liveDirection="ccw";}
+  else{liveTheta=360-ccw;liveDirection="cw";}
+}
+function setReflectionFromChoice(choice){
+  if(current.id!=="custom")return;
+  reflectionChoice=choice;
+  let A,name,motion;
+  if(choice==="x"){A=[[1,0],[0,-1]];name="Custom reflection across x-axis";motion="Reflection across the x-axis: y changes sign.";}
+  else if(choice==="y"){A=[[-1,0],[0,1]];name="Custom reflection across y-axis";motion="Reflection across the y-axis: x changes sign.";}
+  else if(choice==="yx"){A=[[0,1],[1,0]];name="Custom reflection across y = x";motion="Reflection across y = x: coordinates swap.";}
+  else{A=[[0,-1],[-1,0]];name="Custom reflection across y = −x";motion="Reflection across y = −x: coordinates swap and both signs change.";}
+  current={...current,id:"custom",name,meaning:"Custom reflection. This uses coordinate mirror rules, not the rotation formula.",motion,A};
+  const ruleEl=document.getElementById("reflectionRuleText"); if(ruleEl)ruleEl.textContent=reflectionData().rule;
+  t=1; render();
+}
+function setCustomBuilderMode(mode){
+  customBuilderMode=mode;
+  if(mode==="reflection" && current.id==="custom") setReflectionFromChoice(reflectionChoice);
+  else if(mode==="shear" && current.id==="custom"){applyShear();t=1;render();}
+  else if(mode==="scale" && current.id==="custom"){applyScale();t=1;render();}
+  else render();
+}
+
+
+function isScaleView(){
+  return current.id === "custom" && customBuilderMode === "scale";
+}
+function scaleMatrix(mode,k){
+  if(mode === "vertical") return [[1,0],[0,k]];
+  if(mode === "uniform") return [[k,0],[0,k]];
+  return [[k,0],[0,1]];
+}
+function applyScale(){
+  if(current.id !== "custom") return;
+  const mode=customScaleMode;
+  current={
+    ...current,
+    id:"custom",
+    A:scaleMatrix(mode, scaleK),
+    name: mode==="vertical" ? "Custom vertical scaling" : mode==="uniform" ? "Custom uniform scaling" : "Custom horizontal scaling",
+    meaning: mode==="vertical"
+      ? `Scaling rule: (x,y) → (x, ky), with k = ${fmt(scaleK)}.`
+      : mode==="uniform"
+        ? `Scaling rule: (x,y) → (kx, ky), with k = ${fmt(scaleK)}.`
+        : `Scaling rule: (x,y) → (kx, y), with k = ${fmt(scaleK)}.`,
+    motion: mode==="vertical"
+      ? "Vertical scaling changes height using the bottom-right diagonal entry."
+      : mode==="uniform"
+        ? "Uniform scaling changes width and height by the same factor."
+        : "Horizontal scaling changes width using the top-left diagonal entry."
+  };
+}
+function scalingRows(k){
+  const kText=fmt(k);
+  const active=(kind)=> isScaleView() && customScaleMode===kind ? "active-row" : "";
+  return `
+    <tr class="${active("horizontal")}"><td><span class="scaling-mini-matrix"><span>${kText}</span><span>0</span><span>0</span><span>1</span></span></td><td>k &gt; 1</td><td><b>Horizontal stretch</b> — wider</td></tr>
+    <tr class="${active("horizontal")}"><td><span class="scaling-mini-matrix"><span>${kText}</span><span>0</span><span>0</span><span>1</span></span></td><td>0 &lt; k &lt; 1</td><td><b>Horizontal compress</b> — narrower</td></tr>
+    <tr class="${active("vertical")}"><td><span class="scaling-mini-matrix"><span>1</span><span>0</span><span>0</span><span>${kText}</span></span></td><td>k &gt; 1</td><td><b>Vertical stretch</b> — taller</td></tr>
+    <tr class="${active("vertical")}"><td><span class="scaling-mini-matrix"><span>1</span><span>0</span><span>0</span><span>${kText}</span></span></td><td>0 &lt; k &lt; 1</td><td><b>Vertical compress</b> — shorter</td></tr>
+    <tr class="${active("uniform")}"><td><span class="scaling-mini-matrix"><span>${kText}</span><span>0</span><span>0</span><span>${kText}</span></span></td><td>k &gt; 1</td><td><b>Uniform stretch</b></td></tr>
+    <tr class="${active("uniform")}"><td><span class="scaling-mini-matrix"><span>${kText}</span><span>0</span><span>0</span><span>${kText}</span></span></td><td>0 &lt; k &lt; 1</td><td><b>Uniform compress</b></td></tr>
+  `;
+}
+function updateScalingPanel(){
+  const panel=document.getElementById("afterScalingPanel");
+  if(!panel) return;
+  const show = isShearPreset() || isScaleView();
+  panel.classList.toggle("bottom-mode-hidden", !show);
+  if(!show) return;
+  const val=document.getElementById("scaleKVal");
+  if(val) val.textContent=fmt(scaleK);
+  const slider=document.getElementById("scaleKSlider");
+  if(slider) slider.value=scaleK;
+  const body=document.getElementById("afterScalingTableBody");
+  if(body) body.innerHTML=scalingRows(scaleK);
+  const note=document.getElementById("scalingReferenceNote");
+  if(note){
+    note.textContent = isScaleView()
+      ? "Custom scaling selected: the highlighted rows match the scaling type you picked."
+      : "Scaling uses diagonal entries. Shearing uses off-diagonal entries, so this table is a reference for comparison.";
+  }
+
+  const customVal=document.getElementById("customScaleKVal");
+  if(customVal) customVal.textContent=fmt(scaleK);
+  const customSlider=document.getElementById("customScaleKSlider");
+  if(customSlider) customSlider.value=scaleK;
+  const effect=document.getElementById("customScaleEffectLine");
+  if(effect){
+    effect.textContent = customScaleMode==="vertical"
+      ? `Vertical scaling selected: A = [[1, 0], [0, ${fmt(scaleK)}]].`
+      : customScaleMode==="uniform"
+        ? `Uniform scaling selected: A = [[${fmt(scaleK)}, 0], [0, ${fmt(scaleK)}]].`
+        : `Horizontal scaling selected: A = [[${fmt(scaleK)}, 0], [0, 1]].`;
+  }
+  const hb=document.getElementById("scaleHorizontalBtn");
+  const vb=document.getElementById("scaleVerticalBtn");
+  const ub=document.getElementById("scaleUniformBtn");
+  if(hb) hb.classList.toggle("active", customScaleMode==="horizontal");
+  if(vb) vb.classList.toggle("active", customScaleMode==="vertical");
+  if(ub) ub.classList.toggle("active", customScaleMode==="uniform");
+}
+
+
+function isScaleView(){
+  return current.id === "custom" && customBuilderMode === "scale";
+}
+function activeScaleK(){
+  const map={
+    horizontalStretch: horizontalStretchK,
+    horizontalCompress: horizontalCompressK,
+    verticalStretch: verticalStretchK,
+    verticalCompress: verticalCompressK,
+    uniformStretch: uniformStretchK,
+    uniformCompress: uniformCompressK
+  };
+  return map[customScaleMode] ?? 1.5;
+}
+function activeScaleKind(){
+  if(customScaleMode.startsWith("horizontal")) return "horizontal";
+  if(customScaleMode.startsWith("vertical")) return "vertical";
+  return "uniform";
+}
+function scaleMatrixFromMode(){
+  const k=activeScaleK();
+  const kind=activeScaleKind();
+  if(kind==="vertical") return [[1,0],[0,k]];
+  if(kind==="uniform") return [[k,0],[0,k]];
+  return [[k,0],[0,1]];
+}
+function applyScale(){
+  if(current.id !== "custom") return;
+  const k=activeScaleK();
+  const kind=activeScaleKind();
+  const label={
+    horizontalStretch:"horizontal stretch",
+    horizontalCompress:"horizontal compress",
+    verticalStretch:"vertical stretch",
+    verticalCompress:"vertical compress",
+    uniformStretch:"uniform stretch",
+    uniformCompress:"uniform compress"
+  }[customScaleMode] || "scaling";
+
+  scaleK=k;
+  current={
+    ...current,
+    id:"custom",
+    A:scaleMatrixFromMode(),
+    name:`Custom ${label}`,
+    meaning: kind==="vertical"
+      ? `Scaling rule: (x,y) → (x, ky), with k = ${fmt(k)}.`
+      : kind==="uniform"
+        ? `Scaling rule: (x,y) → (kx, ky), with k = ${fmt(k)}.`
+        : `Scaling rule: (x,y) → (kx, y), with k = ${fmt(k)}.`,
+    motion: kind==="vertical"
+      ? "Vertical scaling changes height using the bottom-right diagonal entry."
+      : kind==="uniform"
+        ? "Uniform scaling changes width and height by the same factor."
+        : "Horizontal scaling changes width using the top-left diagonal entry."
+  };
+}
+function scalingRows(k){
+  const kText=fmt(k);
+  const active=(mode)=> isScaleView() && customScaleMode===mode ? "active-row" : "";
+  return `
+    <tr class="${active("horizontalStretch")}"><td><span class="scaling-mini-matrix"><span>${kText}</span><span>0</span><span>0</span><span>1</span></span></td><td>k &gt; 1</td><td><b>Horizontal stretch</b> — wider</td></tr>
+    <tr class="${active("horizontalCompress")}"><td><span class="scaling-mini-matrix"><span>${kText}</span><span>0</span><span>0</span><span>1</span></span></td><td>0 &lt; k &lt; 1</td><td><b>Horizontal compress</b> — narrower</td></tr>
+    <tr class="${active("verticalStretch")}"><td><span class="scaling-mini-matrix"><span>1</span><span>0</span><span>0</span><span>${kText}</span></span></td><td>k &gt; 1</td><td><b>Vertical stretch</b> — taller</td></tr>
+    <tr class="${active("verticalCompress")}"><td><span class="scaling-mini-matrix"><span>1</span><span>0</span><span>0</span><span>${kText}</span></span></td><td>0 &lt; k &lt; 1</td><td><b>Vertical compress</b> — shorter</td></tr>
+    <tr class="${active("uniformStretch")}"><td><span class="scaling-mini-matrix"><span>${kText}</span><span>0</span><span>0</span><span>${kText}</span></span></td><td>k &gt; 1</td><td><b>Uniform stretch</b></td></tr>
+    <tr class="${active("uniformCompress")}"><td><span class="scaling-mini-matrix"><span>${kText}</span><span>0</span><span>0</span><span>${kText}</span></span></td><td>0 &lt; k &lt; 1</td><td><b>Uniform compress</b></td></tr>
+  `;
+}
+function updateScalingPanel(){
+  const panel=document.getElementById("afterScalingPanel");
+  if(!panel) return;
+  const show = isShearPreset() || isScaleView();
+  panel.classList.toggle("bottom-mode-hidden", !show);
+  if(!show) return;
+
+  const k = isScaleView() ? activeScaleK() : scaleK;
+  const val=document.getElementById("scaleKVal");
+  if(val) val.textContent=fmt(k);
+  const slider=document.getElementById("scaleKSlider");
+  if(slider) slider.value=k;
+  const body=document.getElementById("afterScalingTableBody");
+  if(body) body.innerHTML=scalingRows(k);
+
+  const note=document.getElementById("scalingReferenceNote");
+  if(note){
+    note.textContent = isScaleView()
+      ? "Custom scaling selected: the highlighted row matches the slider you moved."
+      : "Scaling uses diagonal entries. Shearing uses off-diagonal entries, so this table is a reference for comparison.";
+  }
+
+  updateCustomScaleBuilder();
+}
+function updateCustomScaleBuilder(){
+  const values={
+    horizontalStretchKVal: horizontalStretchK,
+    horizontalCompressKVal: horizontalCompressK,
+    verticalStretchKVal: verticalStretchK,
+    verticalCompressKVal: verticalCompressK,
+    uniformStretchKVal: uniformStretchK,
+    uniformCompressKVal: uniformCompressK
+  };
+  Object.entries(values).forEach(([id,val])=>{
+    const el=document.getElementById(id);
+    if(el) el.textContent=fmt(val);
+  });
+
+  const sliders={
+    horizontalStretchSlider: horizontalStretchK,
+    horizontalCompressSlider: horizontalCompressK,
+    verticalStretchSlider: verticalStretchK,
+    verticalCompressSlider: verticalCompressK,
+    uniformStretchSlider: uniformStretchK,
+    uniformCompressSlider: uniformCompressK
+  };
+  Object.entries(sliders).forEach(([id,val])=>{
+    const el=document.getElementById(id);
+    if(el) el.value=val;
+  });
+
+  const cards={
+    horizontalStretchCard:"horizontalStretch",
+    horizontalCompressCard:"horizontalCompress",
+    verticalStretchCard:"verticalStretch",
+    verticalCompressCard:"verticalCompress",
+    uniformStretchCard:"uniformStretch",
+    uniformCompressCard:"uniformCompress"
+  };
+  Object.entries(cards).forEach(([id,mode])=>{
+    const el=document.getElementById(id);
+    if(el) el.classList.toggle("active-scale-card", isScaleView() && customScaleMode===mode);
+  });
+
+  const effect=document.getElementById("customScaleEffectLine");
+  if(effect){
+    const label={
+      horizontalStretch:"Horizontal stretch: top-left k is greater than 1, so the object gets wider.",
+      horizontalCompress:"Horizontal compress: top-left k is between 0 and 1, so the object gets narrower.",
+      verticalStretch:"Vertical stretch: bottom-right k is greater than 1, so the object gets taller.",
+      verticalCompress:"Vertical compress: bottom-right k is between 0 and 1, so the object gets shorter.",
+      uniformStretch:"Uniform stretch: both diagonal entries are greater than 1.",
+      uniformCompress:"Uniform compress: both diagonal entries are between 0 and 1."
+    }[customScaleMode] || "Move one slider to choose a scaling case.";
+    effect.textContent=label;
+  }
+}
+
+function updateText(){
+  const A=current.A;
+  document.getElementById("title").textContent=current.name;
+  document.getElementById("meaning").textContent=current.meaning;
+  document.getElementById("matrixDisplay").innerHTML=`<span>${fmt(A[0][0])}</span><span>${fmt(A[0][1])}</span><span>${fmt(A[1][0])}</span><span>${fmt(A[1][1])}</span>`;
+  document.getElementById("rule").innerHTML=`A[x,y]<sup>T</sup> = [${fmt(A[0][0])}x + ${fmt(A[0][1])}y, ${fmt(A[1][0])}x + ${fmt(A[1][1])}y]<sup>T</sup>`;
+  document.getElementById("tip").textContent=current.motion;
+  document.getElementById("thetaVal").textContent=Math.round(theta*180/Math.PI)+"°";
+  document.getElementById("sizeVal").textContent=size.toFixed(2);
+  [["a",0,0],["b",0,1],["c",1,0],["d",1,1]].forEach(([id,r,c])=>{
+    document.getElementById(id+"Val").textContent=fmt(A[r][c]);
+    document.getElementById(id+"Slider").value=A[r][c];
+  });
+  document.querySelectorAll("#presetButtons button").forEach(b=>b.classList.toggle("active",b.dataset.id===current.id));
+  document.querySelectorAll("#objectButtons button").forEach(b=>b.classList.toggle("active",b.dataset.id===objectType));
+
+  ["aSlider","bSlider","cSlider","dSlider"].forEach(id=>{
+    const el=document.getElementById(id);
+    el.disabled=current.id!=="custom";
+  });
+
+  document.getElementById("rotationTopCard").classList.toggle("bottom-mode-hidden",isReflectionView() || isShearView());
+  document.getElementById("machineTopCard").classList.toggle("bottom-mode-hidden",false);
+
+  updateReflectionPanel();
+  updateShearPanels();
+  updateScalingPanel();
+  updateCustomScaleBuilder();
+
+  document.getElementById("customPanel").classList.toggle("bottom-mode-hidden",isReflectionPreset() || isShearPreset());
+  document.getElementById("rotationBuilderInner").classList.toggle("mode-hidden",customBuilderMode!=="rotation");
+  document.getElementById("reflectionBuilderInner").classList.toggle("mode-hidden",customBuilderMode!=="reflection");
+  document.getElementById("shearBuilderInner").classList.toggle("mode-hidden",customBuilderMode!=="shear");
+  document.getElementById("scaleBuilderInner").classList.toggle("mode-hidden",customBuilderMode!=="scale");
+
+  const customUnlocked=current.id==="custom";
+  ["customModeRotationBtn","customModeReflectionBtn","customModeShearBtn","customModeScaleBtn","liveThetaSlider","liveCCWBtn","liveCWBtn","reflectXBtn","reflectYBtn","reflectYeqXBtn","reflectYeqNegXBtn","customShearKSlider","shearHorizontalBtn","shearVerticalBtn","horizontalStretchSlider","horizontalCompressSlider","verticalStretchSlider","verticalCompressSlider","uniformStretchSlider","uniformCompressSlider"].forEach(id=>{
+    const el=document.getElementById(id); if(el)el.disabled=!customUnlocked;
+  });
+  document.getElementById("customModeRotationBtn").classList.toggle("active",customBuilderMode==="rotation");
+  document.getElementById("customModeReflectionBtn").classList.toggle("active",customBuilderMode==="reflection");
+  document.getElementById("customModeShearBtn").classList.toggle("active",customBuilderMode==="shear");
+  document.getElementById("customModeScaleBtn").classList.toggle("active",customBuilderMode==="scale");
+  const scaleBuilder=document.getElementById("scaleBuilderInner");
+  if(scaleBuilder) scaleBuilder.classList.toggle("mode-hidden",customBuilderMode!=="scale");
+  document.getElementById("customLockNote").style.display=customUnlocked?"none":"block";
+
+  const topRight=liveDirection==="cw" ? `sin(${liveTheta}°)` : `−sin(${liveTheta}°)`;
+  const bottomLeft=liveDirection==="cw" ? `−sin(${liveTheta}°)` : `sin(${liveTheta}°)`;
+  document.getElementById("liveThetaValue").textContent=(liveDirection==="cw" && liveTheta!==0 ? "−" : "")+liveTheta+"°";
+  document.getElementById("liveThetaSliderVal").textContent=liveTheta+"°";
+  document.getElementById("liveThetaSlider").value=liveTheta;
+  document.getElementById("liveCCWBtn").classList.toggle("active",liveDirection==="ccw");
+  document.getElementById("liveCWBtn").classList.toggle("active",liveDirection==="cw");
+  document.getElementById("thetaSubscript").textContent=liveDirection==="cw"?"−θ":"θ";
+  document.getElementById("liveRotationMatrix").innerHTML=`<span>cos(${liveTheta}°)</span><span>${topRight}</span><span>${bottomLeft}</span><span>cos(${liveTheta}°)</span>`;
+  document.getElementById("liveCoordinateRule").innerHTML=liveDirection==="cw"
+    ? `(x,y) → (x cos(${liveTheta}°) + y sin(${liveTheta}°), −x sin(${liveTheta}°) + y cos(${liveTheta}°))`
+    : `(x,y) → (x cos(${liveTheta}°) − y sin(${liveTheta}°), x sin(${liveTheta}°) + y cos(${liveTheta}°))`;
+}
+function render(){
+  updateText();
+  drawScene("mainSvg",W,H,S);
+  drawStatic("beforeSvg",[[1,0],[0,1]],"#2563eb","x");
+  drawStatic("afterSvg",current.A,"#dc2626","Ax");
+}
+function setPreset(p){
+  current={...p,A:p.A.map(r=>r.slice())};
+  syncLiveThetaFromMatrix();
+  if(current.id==="custom"){liveTheta=0;liveDirection="ccw";customBuilderMode="rotation";}
+  if(current.id==="shearh" || current.id==="shearv"){shearK=1;applyShear();}
+  t=1; render();
+}
+function init(){
+  const pbox=document.getElementById("presetButtons");
+  presets.forEach(p=>{
+    const b=document.createElement("button");
+    b.textContent=p.label; b.dataset.id=p.id; b.onclick=()=>setPreset(p); pbox.appendChild(b);
+  });
+  const obox=document.getElementById("objectButtons");
+  objects.forEach(o=>{
+    const b=document.createElement("button");
+    b.textContent=o.label; b.dataset.id=o.id; b.onclick=()=>{objectType=o.id;t=1;render();}; obox.appendChild(b);
+  });
+  document.getElementById("thetaSlider").oninput=e=>{theta=parseFloat(e.target.value)*Math.PI/180;t=1;render();};
+  document.getElementById("sizeSlider").oninput=e=>{size=parseFloat(e.target.value);t=1;render();};
+
+  [["a",0,0],["b",0,1],["c",1,0],["d",1,1]].forEach(([id,r,c])=>{
+    document.getElementById(id+"Slider").oninput=e=>{
+      if(current.id!=="custom")return;
+      current={...current,id:"custom",name:"Custom matrix",meaning:"Use the a,b,c,d sliders to build any 2×2 matrix.",motion:"The object is transformed by your custom matrix.",A:current.A.map(row=>row.slice())};
+      current.A[r][c]=parseFloat(e.target.value);
+      t=1; render();
+    };
+  });
+
+  document.getElementById("liveThetaSlider").oninput=e=>{if(current.id!=="custom")return;liveTheta=parseFloat(e.target.value);customBuilderMode="rotation";setRotationFromLiveTheta();};
+  document.getElementById("liveCCWBtn").onclick=()=>{if(current.id!=="custom")return;liveDirection="ccw";customBuilderMode="rotation";setRotationFromLiveTheta();};
+  document.getElementById("liveCWBtn").onclick=()=>{if(current.id!=="custom")return;liveDirection="cw";customBuilderMode="rotation";setRotationFromLiveTheta();};
+
+  document.getElementById("customModeRotationBtn").onclick=()=>setCustomBuilderMode("rotation");
+  document.getElementById("customModeReflectionBtn").onclick=()=>setCustomBuilderMode("reflection");
+  document.getElementById("customModeShearBtn").onclick=()=>setCustomBuilderMode("shear");
+
+  document.getElementById("reflectXBtn").onclick=()=>setReflectionFromChoice("x");
+  document.getElementById("reflectYBtn").onclick=()=>setReflectionFromChoice("y");
+  document.getElementById("reflectYeqXBtn").onclick=()=>setReflectionFromChoice("yx");
+  document.getElementById("reflectYeqNegXBtn").onclick=()=>setReflectionFromChoice("ynegx");
+
+  document.getElementById("shearHorizontalBtn").onclick=()=>{if(current.id!=="custom")return;customShearMode="horizontal";customBuilderMode="shear";applyShear();t=1;render();};
+  document.getElementById("shearVerticalBtn").onclick=()=>{if(current.id!=="custom")return;customShearMode="vertical";customBuilderMode="shear";applyShear();t=1;render();};
+  document.getElementById("customShearKSlider").oninput=e=>{if(current.id!=="custom")return;shearK=parseFloat(e.target.value);customBuilderMode="shear";applyShear();t=1;render();};
+  document.getElementById("shearKSlider").oninput=e=>{
+    shearK=parseFloat(e.target.value);
+    if(current.id==="shearh" || current.id==="shearv" || (current.id==="custom" && customBuilderMode==="shear")){
+      applyShear();t=1;render();
+    }else{
+      updateShearPanels();
+    }
+  };
+
+
+  document.getElementById("customModeScaleBtn").onclick=()=>setCustomBuilderMode("scale");
+
+  const scaleSliderMap=[
+    ["horizontalStretchSlider","horizontalStretch"],
+    ["horizontalCompressSlider","horizontalCompress"],
+    ["verticalStretchSlider","verticalStretch"],
+    ["verticalCompressSlider","verticalCompress"],
+    ["uniformStretchSlider","uniformStretch"],
+    ["uniformCompressSlider","uniformCompress"]
+  ];
+  scaleSliderMap.forEach(([id,mode])=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    el.oninput=e=>{
+      if(current.id!=="custom") return;
+      const v=parseFloat(e.target.value);
+      if(mode==="horizontalStretch") horizontalStretchK=v;
+      if(mode==="horizontalCompress") horizontalCompressK=v;
+      if(mode==="verticalStretch") verticalStretchK=v;
+      if(mode==="verticalCompress") verticalCompressK=v;
+      if(mode==="uniformStretch") uniformStretchK=v;
+      if(mode==="uniformCompress") uniformCompressK=v;
+      customScaleMode=mode;
+      customBuilderMode="scale";
+      applyScale();
+      t=1;
+      render();
+    };
+  });
+
+  document.getElementById("scaleKSlider").oninput=e=>{
+    scaleK=parseFloat(e.target.value);
+    if(current.id==="custom" && customBuilderMode==="scale"){
+      if(customScaleMode==="horizontalStretch") horizontalStretchK=scaleK;
+      if(customScaleMode==="horizontalCompress") horizontalCompressK=scaleK;
+      if(customScaleMode==="verticalStretch") verticalStretchK=scaleK;
+      if(customScaleMode==="verticalCompress") verticalCompressK=scaleK;
+      if(customScaleMode==="uniformStretch") uniformStretchK=scaleK;
+      if(customScaleMode==="uniformCompress") uniformCompressK=scaleK;
+      applyScale();
+      t=1;
+      render();
+    } else {
+      updateScalingPanel();
+    }
+  };
+
+  document.getElementById("playBtn").onclick=()=>{
+    if(animating)return;
+    animating=true; t=0;
+    const start=performance.now();
+    function frame(now){
+      t=Math.min(1,(now-start)/1200);
+      drawScene("mainSvg",W,H,S);
+      if(t<1)requestAnimationFrame(frame);
+      else{animating=false;t=1;render();}
+    }
+    requestAnimationFrame(frame);
+  };
+  setPreset(presets[1]);
+}
+init();
+</script>
+</body>
+</html>
