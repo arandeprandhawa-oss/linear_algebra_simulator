@@ -1,0 +1,109 @@
+
+<h2 class="sr-only">Interactive stepper showing how L is built from Gaussian elimination multipliers</h2>
+<style>
+.mwp{display:inline-block;position:relative;padding:5px 10px;}
+.mwp::before,.mwp::after{content:'';position:absolute;top:0;bottom:0;width:5px;border:1.5px solid var(--color-text-primary);}
+.mwp::before{left:0;border-right:none;}
+.mwp::after{right:0;border-left:none;}
+.mgd{display:grid;grid-template-columns:repeat(3,32px);gap:2px;}
+.mc{height:32px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;border-radius:3px;color:var(--color-text-primary);}
+.ha{background:#FAEEDA;color:#854F0B;}
+.hb{background:#E1F5EE;color:#0F6E56;}
+.hc{background:#EEEDFE;color:#3C3489;}
+.t3{color:var(--color-text-tertiary);}
+.t2{color:var(--color-text-secondary);font-weight:400;}
+.la{display:inline-block;width:9px;height:9px;border-radius:2px;background:#FAEEDA;}
+.lb{display:inline-block;width:9px;height:9px;border-radius:2px;background:#E1F5EE;}
+.lc{display:inline-block;width:9px;height:9px;border-radius:2px;background:#EEEDFE;}
+.fm{font-family:var(--font-mono);font-size:13px;color:var(--color-text-primary);margin:5px 0 0;}
+.fc{color:#534AB7;}
+.dt{width:7px;height:7px;border-radius:50%;background:var(--color-border-tertiary);}
+.dt.on{background:var(--color-text-primary);}
+@media(prefers-color-scheme:dark){
+.ha{background:#633806;color:#FAC775;}.hb{background:#085041;color:#9FE1CB;}.hc{background:#26215C;color:#AFA9EC;}
+.la{background:#633806;}.lb{background:#085041;}.lc{background:#26215C;}
+.fc{color:#AFA9EC;}
+}
+</style>
+
+<div style="padding:.5rem 0;">
+  <div id="dts" style="display:flex;justify-content:center;gap:6px;margin-bottom:14px;"></div>
+  <div style="display:flex;justify-content:center;gap:24px;margin-bottom:10px;">
+    <div>
+      <div id="ll" style="font-size:11px;color:var(--color-text-secondary);text-align:center;margin-bottom:5px;">Matrix A</div>
+      <div class="mwp"><div class="mgd" id="wm"></div></div>
+    </div>
+    <div>
+      <div style="font-size:11px;color:var(--color-text-secondary);text-align:center;margin-bottom:5px;">L</div>
+      <div class="mwp"><div class="mgd" id="lm"></div></div>
+    </div>
+  </div>
+  <div style="display:flex;justify-content:center;gap:10px;font-size:11px;color:var(--color-text-secondary);margin-bottom:10px;">
+    <span style="display:flex;align-items:center;gap:3px;"><span class="la"></span>pivot</span>
+    <span style="display:flex;align-items:center;gap:3px;"><span class="lb"></span>just zeroed</span>
+    <span style="display:flex;align-items:center;gap:3px;"><span class="lc"></span>new L entry</span>
+  </div>
+  <div id="dsc" style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 14px;margin-bottom:12px;min-height:56px;font-size:13px;line-height:1.6;"></div>
+  <div style="display:flex;gap:8px;justify-content:center;">
+    <button id="bp" onclick="go(-1)">← Back</button>
+    <button id="bn" onclick="go(1)">Next →</button>
+  </div>
+</div>
+
+<script>
+const S=[
+  {ll:"Matrix A",W:[[1,2,1],[-2,-3,-2],[3,7,4]],lv:['?','?','?'],piv:null,zer:null,nl:null,
+   d:`<span style="color:var(--color-text-secondary);">Three rules for L: <span style="color:var(--color-text-primary);font-weight:500;">diagonal = 1</span>, upper triangle = 0, lower triangle = multipliers (? until each step fills them in).</span>`},
+  {ll:"After R₂ + 2R₁",W:[[1,2,1],[0,1,0],[3,7,4]],lv:[-2,'?','?'],piv:[0,0],zer:[1,0],nl:[1,0],
+   d:`<span style="color:var(--color-text-secondary);">Entry (2,1) = −2. Pivot (1,1) = 1.</span><p class="fm">m = <span class="fc">(−2) ÷ (1) = −2</span>  →  place −2 in L at that same position (2,1)</p>`},
+  {ll:"After R₃ − 3R₁",W:[[1,2,1],[0,1,0],[0,1,1]],lv:[-2,3,'?'],piv:[0,0],zer:[2,0],nl:[2,0],
+   d:`<span style="color:var(--color-text-secondary);">Entry (3,1) = 3. Pivot (1,1) = 1.</span><p class="fm">m = <span class="fc">(3) ÷ (1) = 3</span>  →  place 3 in L at that same position (3,1)</p>`},
+  {ll:"After R₃ − R₂ = U",W:[[1,2,1],[0,1,0],[0,0,1]],lv:[-2,3,1],piv:[1,1],zer:[2,1],nl:[2,1],
+   d:`<span style="color:var(--color-text-secondary);">Entry (3,2) = 1. Pivot (2,2) = 1.</span><p class="fm">m = <span class="fc">(1) ÷ (1) = 1</span>  →  place 1 in L at that same position (3,2)</p>`},
+  {ll:"U (done)",W:[[1,2,1],[0,1,0],[0,0,1]],lv:[-2,3,1],piv:null,zer:null,nl:null,
+   d:`<span style="color:var(--color-text-secondary);">L is complete. Each multiplier sits at the exact position of the entry it eliminated. A = LU ✓</span>`}
+];
+const LM=[[null,null,null],[0,null,null],[1,2,null]];
+let cur=0;
+
+function rW(s){
+  const e=document.getElementById('wm');e.innerHTML='';
+  for(let r=0;r<3;r++) for(let c=0;c<3;c++){
+    const d=document.createElement('div');d.className='mc';
+    const v=s.W[r][c];d.textContent=v;
+    if(s.piv&&s.piv[0]===r&&s.piv[1]===c) d.classList.add('ha');
+    else if(s.zer&&s.zer[0]===r&&s.zer[1]===c) d.classList.add('hb');
+    else if(v===0) d.classList.add('t3');
+    e.appendChild(d);
+  }
+}
+
+function rL(s){
+  const e=document.getElementById('lm');e.innerHTML='';
+  for(let r=0;r<3;r++) for(let c=0;c<3;c++){
+    const d=document.createElement('div');d.className='mc';
+    if(r===c){d.textContent='1';d.classList.add('t2');}
+    else if(c>r){d.textContent='0';d.classList.add('t3');}
+    else{
+      const v=s.lv[LM[r][c]];d.textContent=v;
+      if(v==='?') d.classList.add('t3');
+      else if(s.nl&&s.nl[0]===r&&s.nl[1]===c) d.classList.add('hc');
+    }
+    e.appendChild(d);
+  }
+}
+
+function render(){
+  const s=S[cur];
+  document.getElementById('ll').textContent=s.ll;
+  rW(s);rL(s);
+  document.getElementById('dsc').innerHTML=s.d;
+  document.getElementById('dts').innerHTML=S.map((_,i)=>`<div class="dt${i===cur?' on':''}"></div>`).join('');
+  document.getElementById('bp').disabled=cur===0;
+  document.getElementById('bn').disabled=cur===S.length-1;
+  document.getElementById('bn').textContent=cur===S.length-1?'✓ Done':'Next →';
+}
+
+function go(d){cur=Math.max(0,Math.min(S.length-1,cur+d));render();}
+render();
+</script>
