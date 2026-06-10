@@ -1,0 +1,97 @@
+
+<h2 class="sr-only">Step-by-step: solving Ax = b using LU forward and back substitution</h2>
+<style>
+.mp{display:inline-block;position:relative;padding:5px 10px;}
+.mp::before,.mp::after{content:'';position:absolute;top:0;bottom:0;width:5px;border:1.5px solid var(--color-text-primary);}
+.mp::before{left:0;border-right:none;}
+.mp::after{right:0;border-left:none;}
+.mg{display:grid;grid-template-columns:repeat(3,30px) 38px;gap:2px;}
+.mc{height:32px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;border-radius:3px;color:var(--color-text-primary);}
+.aug{border-left:1.5px solid var(--color-border-secondary);}
+.hA{background:#FAEEDA;color:#854F0B;}
+.hB{background:#E1F5EE;color:#0F6E56;}
+.t3{color:var(--color-text-tertiary);}
+.fm{font-family:var(--font-mono);font-size:13px;display:block;margin-top:5px;color:var(--color-text-primary);}
+.fc{color:#534AB7;}
+.dt{width:7px;height:7px;border-radius:50%;background:var(--color-border-tertiary);}
+.dt.on{background:var(--color-text-primary);}
+.bA{background:#FAEEDA;color:#854F0B;font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px;display:inline-block;}
+.bB{background:#E1F5EE;color:#0F6E56;font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px;display:inline-block;}
+@media(prefers-color-scheme:dark){
+.hA{background:#633806;color:#FAC775;}.hB{background:#085041;color:#9FE1CB;}
+.fc{color:#AFA9EC;}
+.bA{background:#633806;color:#FAC775;}.bB{background:#085041;color:#9FE1CB;}
+}
+</style>
+
+<div style="padding:.5rem 0;">
+  <div id="dt" style="display:flex;justify-content:center;gap:5px;margin-bottom:14px;"></div>
+  <div id="sl" style="text-align:center;margin-bottom:5px;font-size:12px;color:var(--color-text-secondary);"></div>
+  <div style="display:flex;justify-content:center;margin-bottom:12px;">
+    <div class="mp"><div class="mg" id="am"></div></div>
+  </div>
+  <div id="dc" style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 14px;margin-bottom:12px;font-size:13px;line-height:1.6;min-height:64px;"></div>
+  <div style="display:flex;gap:8px;justify-content:center;">
+    <button id="bk" onclick="go(-1)">← Back</button>
+    <button id="fw" onclick="go(1)">Next →</button>
+  </div>
+</div>
+
+<script>
+const L=[[1,0,0],[-2,1,0],[3,1,1]],U=[[1,2,1],[0,1,0],[0,0,1]];
+const S=[
+  {m:L,a:[1,2,8],pr:-1,ph:1,sl:"L | b",hd:"Phase 1 — solve Ly = b",
+   dc:"L is lower triangular. Work top to bottom — each row has one unknown. Substitute what you already found."},
+  {m:L,a:[1,2,8],pr:0,ph:1,sl:"L | b",hd:"Row 1 → y₁",
+   dc:`<span style="color:var(--color-text-secondary);">1·y₁ = 1</span><span class="fm"><span class="fc">y₁ = 1</span></span>`},
+  {m:L,a:[1,2,8],pr:1,ph:1,sl:"L | b",hd:"Row 2 → y₂",
+   dc:`<span style="color:var(--color-text-secondary);">−2·(1) + y₂ = 2</span><span class="fm"><span class="fc">y₂ = 4</span></span>`},
+  {m:L,a:[1,2,8],pr:2,ph:1,sl:"L | b",hd:"Row 3 → y₃",
+   dc:`<span style="color:var(--color-text-secondary);">3·(1) + 4 + y₃ = 8</span><span class="fm"><span class="fc">y₃ = 1  →  y = [1, 4, 1] ✓</span></span>`},
+  {m:U,a:[1,4,1],pr:-1,ph:2,sl:"U | y",hd:"Phase 2 — solve Ux = y",
+   dc:"U is upper triangular. Work bottom to top now — same idea, just reversed direction."},
+  {m:U,a:[1,4,1],pr:2,ph:2,sl:"U | y",hd:"Row 3 → x₃",
+   dc:`<span style="color:var(--color-text-secondary);">x₃ = 1</span><span class="fm"><span class="fc">x₃ = 1</span></span>`},
+  {m:U,a:[1,4,1],pr:1,ph:2,sl:"U | y",hd:"Row 2 → x₂",
+   dc:`<span style="color:var(--color-text-secondary);">x₂ = 4</span><span class="fm"><span class="fc">x₂ = 4</span></span>`},
+  {m:U,a:[1,4,1],pr:0,ph:2,sl:"U | y",hd:"Row 1 → x₁",
+   dc:`<span style="color:var(--color-text-secondary);">x₁ + 2·(4) + 1·(1) = 1</span><span class="fm"><span class="fc">x₁ = −8</span></span>`},
+  {m:U,a:[1,4,1],pr:-1,ph:2,sl:"U | y",hd:"Done — x = [−8, 4, 1]",
+   dc:"No row reduction needed at all. Just two quick substitution passes through triangular systems."}
+];
+let c=0;
+
+function rA(s){
+  const e=document.getElementById('am');e.innerHTML='';
+  for(let r=0;r<3;r++){
+    for(let j=0;j<3;j++){
+      const d=document.createElement('div');d.className='mc';
+      const v=s.m[r][j];d.textContent=v;
+      if(s.pr===r&&j===r) d.classList.add('hA');
+      else if(v===0) d.classList.add('t3');
+      e.appendChild(d);
+    }
+    const a=document.createElement('div');a.className='mc aug';
+    a.textContent=s.a[r];
+    if(s.pr===r) a.classList.add('hB');
+    e.appendChild(a);
+  }
+}
+
+function ren(){
+  const s=S[c];rA(s);
+  document.getElementById('sl').textContent=s.sl;
+  let h=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">`;
+  h+=`<span class="${s.ph===1?'bA':'bB'}">${s.ph===1?'phase 1':'phase 2'}</span>`;
+  h+=`<span style="font-weight:500;">${s.hd}</span></div>`;
+  h+=`<div style="color:var(--color-text-secondary);">${s.dc}</div>`;
+  document.getElementById('dc').innerHTML=h;
+  document.getElementById('dt').innerHTML=S.map((_,i)=>`<div class="dt${i===c?' on':''}"></div>`).join('');
+  document.getElementById('bk').disabled=c===0;
+  document.getElementById('fw').disabled=c===S.length-1;
+  document.getElementById('fw').textContent=c===S.length-1?'✓ Done':'Next →';
+}
+
+function go(d){c=Math.max(0,Math.min(S.length-1,c+d));ren();}
+ren();
+</script>
